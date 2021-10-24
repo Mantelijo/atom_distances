@@ -5,7 +5,7 @@ ir pateikia bei išsaugo atstumų histogramą.
 ## Naudojimas
 ```bash
 python ./main.py
-$ Įverskite PDB failo id: (1zaa)
+$ Įveskite PDB failo id: (1zaa)
 $ Skaičiuojami atstumai
 $ Šalinami dublikuoti ir nuliniai atstumai
 $ Baigta!

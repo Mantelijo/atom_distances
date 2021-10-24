@@ -5,7 +5,7 @@ from scipy.spatial import distance_matrix
 import matplotlib.pyplot as plt
 from urllib.error import HTTPError
 
-pdbId = input("Įverskite PDB failo id: (1zaa) ")
+pdbId = input("Įveskite PDB failo id: (1zaa) ")
 
 # Default to 1zaa
 if len(pdbId) == 0:
