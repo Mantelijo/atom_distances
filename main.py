@@ -1,7 +1,9 @@
-import Bio.PDB.PDBParser as PDBParser
 import urllib.request
 import io
 import numpy as np
+from scipy.spatial import distance_matrix
+import matplotlib.pyplot as plt
+from urllib.error import HTTPError
 
 pdbId = input("Įverskite PDB failo id: (1zaa) ")
 
@@ -9,43 +11,61 @@ pdbId = input("Įverskite PDB failo id: (1zaa) ")
 if len(pdbId) == 0:
     pdbId = "1zaa"
 
+pdbId = pdbId.upper()
 url = "https://files.rcsb.org/download/{}.pdb".format(
     pdbId
 )
 
+response = None
+try:
+    response = urllib.request.urlopen(url)
+except HTTPError as err:
+    print(f"Toks PDB id neegzistuoja: HTTP {err.code}")
+    exit(1)
+
 # Attempt to fetch pdb with provided id from rcsb
-with urllib.request.urlopen(url) as response:
-    if response.code != 200:
-        print("Toks PDB id neegzistuoja")
-        exit(1)
+if response.code != 200:
+    print("Toks PDB id neegzistuoja")
+    exit(1)
 
-    # Parse pdb file ATOM records
-    pdbInMemoryFile = io.BytesIO(response.read())
+# Parse pdb file ATOM records
+pdbInMemoryFile = io.BytesIO(response.read())
+atoms = []
+while True:
+    line = pdbInMemoryFile.readline().decode("utf-8")
+    if line.startswith("ATOM") or line.startswith("HETATM"):
+        # https://www.cgl.ucsf.edu/chimera/docs/UsersGuide/tutorials/pdbintro.html#:~:text=X%20orthogonal%20%C3%85%20coordinate
+        x, y, z = float(line[30:38]), float(line[38:46]), float(line[46:54])
+        atoms.append([x, y, z])
 
-    # atoms = np.array()
-    while True:
-        line = pdbInMemoryFile.readline().decode("utf-8")
-        if line.startswith("ATOM"):
+    # Break loop once all lines are read
+    if line == "":
+        pdbInMemoryFile.close()
+        break
+all_atoms = np.array(atoms)
+# Calculate distances between atoms
+print("Skaičiuojami atstumai")
+distances = distance_matrix(all_atoms, all_atoms)
 
-            # https://www.cgl.ucsf.edu/chimera/docs/UsersGuide/tutorials/pdbintro.html#:~:text=X%20orthogonal%20%C3%85%20coordinate
-            x, y, z = float(line[30:38]), float(line[38:46]), float(line[46:54])
+# Remove duplicates and self distances: AA, AB, BA - will leave only BA
+print("Šalinami dublikuoti ir nuliniai atstumai")
+num_atoms = distances.shape[0]
+for i in range(num_atoms):
+    for j in range(i, num_atoms):
+        distances[i, j] = 0
 
-        # Break loop once all lines are read
-        if line == "":
-            pdbInMemoryFile.close()
-            break
+# Drop zeros
+distances = distances.flatten()
+distances[distances == 0] = np.nan
 
-    # Calculate distances of atoms
+print("Baigta!")
+# Output the histogram image
+plt.hist(distances, edgecolor="#444", linewidth=1.5, color="#aaaa44")
+plt.xlabel("Atstumas, Å")
+plt.ylabel("Dažnis")
+plt.title(f"{pdbId} Atstumų tarp {num_atoms} atomų histograma")
 
-    # Output the histogram image
-
-
-class Atom:
-    x, y, z = 0, 0, 0
-
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
-
+# Save image and display it
+plt.savefig(f"{pdbId}.png")
+plt.show()
 
