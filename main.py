@@ -50,9 +50,7 @@ distances = distance_matrix(all_atoms, all_atoms)
 # Remove duplicates and self distances: AA, AB, BA - will leave only BA
 print("Šalinami dublikuoti ir nuliniai atstumai")
 num_atoms = distances.shape[0]
-for i in range(num_atoms):
-    for j in range(i, num_atoms):
-        distances[i, j] = 0
+distances = np.tril(distances)
 
 # Drop zeros
 distances = distances.flatten()
